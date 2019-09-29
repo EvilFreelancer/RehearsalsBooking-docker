@@ -1,0 +1,8 @@
+/.idea/
+/app/
+/backend
+/logs/
+/data/
+/.env
+/.env.database
+/docker-compose.yml

@@ -1,0 +1,67 @@
+version: "3.5"
+
+x-app-mount:
+  &app-mount
+  type: bind
+  source: /
+  target: /app
+
+services:
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    volumes:
+#    - *app-mount
+    - .//nginx/efreelancer:/etc/nginx/conf.d
+    - ./logs/nginx:/var/log/nginx
+
+  db:
+    image: postgres:latest
+    volumes:
+    - ./data/db:/var/lib/postgresql/data
+    env_file:
+    - ./.env.database
+    ports:
+    - 127.0.0.1:5432:5432
+
+  app:
+    restart: unless-stopped
+    build:
+      context: backend
+    environment:
+    - CONTAINER_ROLE=app
+    env_file:
+    - .env
+    volumes:
+#    - *app-mount
+    - ./logs/app:/var/log/apache2
+    - ./app/storage:/app/storage
+    - ./app/bootstrap/cache:/app/bootstrap/cache
+
+  queue:
+    restart: unless-stopped
+    build:
+      context: backend
+    environment:
+    - CONTAINER_ROLE=queue
+    env_file:
+    - .env
+    volumes:
+    - ./logs/apache2:/var/log/apache2
+    - ./app/storage:/app/storage
+    - ./app/bootstrap/cache:/app/bootstrap/cache
+
+  scheduler:
+    restart: unless-stopped
+    build:
+      context: backend
+    environment:
+    - CONTAINER_ROLE=scheduler
+    env_file:
+    - .env
+    user: apache
+    volumes:
+    - ./logs/apache2:/var/log/apache2
+    - ./app/storage:/app/storage
+    - ./app/bootstrap/cache:/app/bootstrap/cache
